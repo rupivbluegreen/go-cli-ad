@@ -1,0 +1,18 @@
+# Build artifacts
+/bin/
+*.exe
+*.test
+*.out
+
+# Local config that may contain credentials
+/.config/
+azure-token.json
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local Claude Code state
+.claude/
