@@ -1,0 +1,9 @@
+title: rogi-cli
+description: A small Go CLI that authenticates against on-prem Active Directory or Azure AD and lists the groups and directory roles you belong to.
+theme: jekyll-theme-cayman
+show_downloads: false
+github:
+  is_project_page: true
+  owner_name: rupivbluegreen
+  repository_name: rogi-cli
+  repository_url: https://github.com/rupivbluegreen/rogi-cli
