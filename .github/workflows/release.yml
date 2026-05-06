@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Build cross-platform binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          for OS_ARCH in "darwin/arm64" "darwin/amd64" "linux/amd64" "linux/arm64" "windows/amd64"; do
+            GOOS=${OS_ARCH%/*}
+            GOARCH=${OS_ARCH#*/}
+            EXT=""
+            [ "$GOOS" = "windows" ] && EXT=".exe"
+            OUT="rogi-cli-${VERSION}-${GOOS}-${GOARCH}${EXT}"
+            echo "building $OUT"
+            GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 \
+              go build -trimpath -ldflags="-s -w" -o "dist/$OUT" ./cmd/rogi-cli
+          done
+          cd dist
+          for f in rogi-cli-*-darwin-* rogi-cli-*-linux-*; do
+            tar czf "${f}.tar.gz" "$f"
+            rm "$f"
+          done
+          for f in rogi-cli-*-windows-*.exe; do
+            zip -q "${f%.exe}.zip" "$f"
+            rm "$f"
+          done
+          shasum -a 256 *.tar.gz *.zip > checksums.txt
+          ls -la
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --generate-notes \
+            dist/*.tar.gz dist/*.zip dist/checksums.txt
