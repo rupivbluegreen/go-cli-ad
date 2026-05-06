@@ -29,7 +29,9 @@ func (c *Client) LookupUser(sam string) (string, error) {
 
 // Groups returns the user's group memberships. When nested is true, it expands
 // nested groups using the AD-specific matching rule LDAP_MATCHING_RULE_IN_CHAIN
-// (1.2.840.113556.1.4.1941).
+// (1.2.840.113556.1.4.1941). Uses simple paging (RFC 2696) so large result
+// sets don't hit the server's per-request size or time limits — recursive
+// queries in big directories regularly exceed both.
 func (c *Client) Groups(userDN string, nested bool) ([]Group, error) {
 	var filter string
 	if nested {
@@ -45,7 +47,8 @@ func (c *Client) Groups(userDN string, nested bool) ([]Group, error) {
 		[]string{"cn", "distinguishedName"},
 		nil,
 	)
-	res, err := c.conn.Search(req)
+	const pageSize = 200
+	res, err := c.conn.SearchWithPaging(req, pageSize)
 	if err != nil {
 		return nil, fmt.Errorf("searching groups: %w", err)
 	}
