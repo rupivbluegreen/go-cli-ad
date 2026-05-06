@@ -7,8 +7,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/spf13/cobra"
-	"github.com/tq58qd/rogi-cli/internal/azure"
-	"github.com/tq58qd/rogi-cli/internal/output"
+	"github.com/rupivbluegreen/rogi-cli/internal/azure"
+	"github.com/rupivbluegreen/rogi-cli/internal/output"
 )
 
 func newAzureCmd() *cobra.Command {

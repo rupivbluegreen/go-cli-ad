@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/tq58qd/rogi-cli/internal/config"
+	"github.com/rupivbluegreen/rogi-cli/internal/config"
 )
 
 func newConfigCmd() *cobra.Command {

@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tq58qd/rogi-cli/internal/config"
-	"github.com/tq58qd/rogi-cli/internal/onprem"
-	"github.com/tq58qd/rogi-cli/internal/output"
+	"github.com/rupivbluegreen/rogi-cli/internal/onprem"
+	"github.com/rupivbluegreen/rogi-cli/internal/output"
 	"golang.org/x/term"
 )
 
@@ -166,6 +165,3 @@ func render(w io.Writer, r output.Result) error {
 	return output.RenderText(w, r)
 }
 
-// keep the import used; some users will pass a UPN as the username, in which
-// case sAMAccountName lookup needs the local-part.
-var _ = config.BindFormatUPN
