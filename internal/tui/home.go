@@ -63,7 +63,7 @@ func (h homeModel) View() string {
 			cursor = "▸ "
 			title = selectedStyle.Render(item.title)
 		}
-		b.WriteString(fmt.Sprintf("%s%s\n", cursor, title))
+		fmt.Fprintf(&b, "%s%s\n", cursor, title)
 		b.WriteString("    " + helpStyle.Render(item.desc) + "\n\n")
 	}
 	b.WriteString(helpStyle.Render("↑/↓ navigate  •  enter select  •  q quit"))
