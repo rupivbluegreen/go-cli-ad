@@ -99,17 +99,17 @@ func (m configInitModel) View() string {
 	b.WriteString(titleStyle.Render("Config: init") + "\n\n")
 	switch m.state {
 	case cfgInitConfirm:
-		b.WriteString(fmt.Sprintf("Will write a starter config to:\n  %s\n\n", m.path))
+		fmt.Fprintf(&b, "Will write a starter config to:\n  %s\n\n", m.path)
 		if m.exists {
 			b.WriteString(errorStyle.Render("⚠ file already exists — you'll be asked to confirm overwrite") + "\n\n")
 		}
 		b.WriteString(helpStyle.Render("enter write  •  esc cancel"))
 	case cfgInitConfirmOverwrite:
-		b.WriteString(fmt.Sprintf("Overwrite existing %s?\n\n", m.path))
+		fmt.Fprintf(&b, "Overwrite existing %s?\n\n", m.path)
 		b.WriteString(helpStyle.Render("y overwrite  •  n / esc cancel"))
 	case cfgInitDone:
 		b.WriteString(successStyle.Render("✓ Wrote starter config") + "\n")
-		b.WriteString(fmt.Sprintf("  %s\n\n", m.path))
+		fmt.Fprintf(&b, "  %s\n\n", m.path)
 		b.WriteString("Edit it to point at your AD server and Azure tenant.\n")
 		b.WriteString("\n" + helpStyle.Render("enter back to menu"))
 	case cfgInitError:

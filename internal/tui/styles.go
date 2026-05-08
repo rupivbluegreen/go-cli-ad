@@ -26,11 +26,6 @@ var (
 			Foreground(lipgloss.Color("245")).
 			Width(12)
 
-	panelStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#00ADD8")).
-			Padding(1, 2)
-
 	deviceCodePanel = lipgloss.NewStyle().
 			Border(lipgloss.DoubleBorder()).
 			BorderForeground(lipgloss.Color("#FFB86C")).
