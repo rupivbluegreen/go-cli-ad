@@ -25,10 +25,10 @@ type CachedToken struct {
 }
 
 // ErrNoCachedToken is returned when the cache file does not exist.
-var ErrNoCachedToken = errors.New("no cached token; run 'rogi-cli azure login'")
+var ErrNoCachedToken = errors.New("no cached token; run 'go-cli-ad azure login'")
 
 // ErrTokenExpired is returned when the cached token has expired.
-var ErrTokenExpired = errors.New("cached token expired; run 'rogi-cli azure login'")
+var ErrTokenExpired = errors.New("cached token expired; run 'go-cli-ad azure login'")
 
 // TokenCachePath returns the conventional location for the token cache file.
 func TokenCachePath() (string, error) {
@@ -36,17 +36,31 @@ func TokenCachePath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("locating user config dir: %w", err)
 	}
-	return filepath.Join(dir, "rogi-cli", "azure-token.json"), nil
+	return filepath.Join(dir, "go-cli-ad", "azure-token.json"), nil
 }
 
-// DeviceCodeLogin runs the device code flow, prints the user prompt to stderr,
-// and returns a credential plus the resulting access token.
-func DeviceCodeLogin(ctx context.Context, tenantID, clientID string, prompt func(string)) (azcore.TokenCredential, *CachedToken, error) {
+// DeviceCodePrompt carries the structured pieces of an Azure device code
+// challenge. The CLI prints Message to stderr; the TUI renders UserCode and
+// VerificationURL as a panel.
+type DeviceCodePrompt struct {
+	UserCode        string
+	VerificationURL string
+	Message         string
+}
+
+// DeviceCodeLogin runs the device code flow and returns a credential plus the
+// resulting access token. The prompt callback is invoked once with the
+// verification URL and user code so callers can decide how to display them.
+func DeviceCodeLogin(ctx context.Context, tenantID, clientID string, prompt func(DeviceCodePrompt)) (azcore.TokenCredential, *CachedToken, error) {
 	cred, err := azidentity.NewDeviceCodeCredential(&azidentity.DeviceCodeCredentialOptions{
 		TenantID: tenantID,
 		ClientID: clientID,
 		UserPrompt: func(_ context.Context, m azidentity.DeviceCodeMessage) error {
-			prompt(m.Message)
+			prompt(DeviceCodePrompt{
+				UserCode:        m.UserCode,
+				VerificationURL: m.VerificationURL,
+				Message:         m.Message,
+			})
 			return nil
 		},
 	})

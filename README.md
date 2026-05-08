@@ -1,24 +1,25 @@
-# rogi-cli
+# go-cli-ad
 
 A Go CLI that authenticates against on-premises **Active Directory** (LDAP) or
 **Azure AD / Entra ID** (device-code flow), then lists the groups and directory
-roles the signed-in user belongs to.
+roles the signed-in user belongs to. Ships with a Bubble Tea TUI that auto-launches
+when you run the binary with no arguments on a TTY.
 
 ## Build
 
 ```sh
-go build -o bin/rogi-cli ./cmd/rogi-cli
+go build -o bin/go-cli-ad ./cmd/go-cli-ad
 ```
 
-Requires Go 1.24+.
+Requires Go 1.25+.
 
 ## First-time setup
 
 ```sh
-rogi-cli config init
+go-cli-ad config init
 ```
 
-This writes a starter config to `~/.config/rogi-cli/config.yaml`. Edit it:
+This writes a starter config to `~/.config/go-cli-ad/config.yaml`. Edit it:
 
 ```yaml
 onprem:
@@ -32,17 +33,35 @@ azure:
   client_id: 04b07795-8ddb-461a-bbee-02f9e1bf7b46  # Azure CLI public client
 ```
 
-## On-premises Active Directory
+## Interactive TUI
+
+Run the binary with no arguments on a TTY to launch a Bubble Tea interface
+that walks through the same flows:
+
+```sh
+go-cli-ad
+```
+
+The home menu offers on-prem lookup, Azure sign-in, Azure roles (cached
+token), and `config init`. In non-TTY contexts (CI, pipes) the same command
+prints help, so existing scripts are unaffected.
+
+Keys: `↑`/`↓` navigate, `enter` select, `esc` back to menu, `ctrl+c` quit.
+The on-prem screen prefills server / base DN / username from your config when
+present. The Azure sign-in screen renders the verification URL and user code
+in a panel and polls until you've completed sign-in in your browser.
+
+## On-premises Active Directory (CLI)
 
 ```sh
 # Interactive — prompts for password
-rogi-cli onprem login
+go-cli-ad onprem login
 
 # Pipe-friendly
-echo "$AD_PASSWORD" | rogi-cli onprem login --password-stdin
+echo "$AD_PASSWORD" | go-cli-ad onprem login --password-stdin
 
 # Override config
-rogi-cli onprem login \
+go-cli-ad onprem login \
   --server ldaps://dc.corp.example.com \
   --base-dn DC=corp,DC=example,DC=com \
   --username alex
@@ -62,24 +81,24 @@ Flags:
 Group recursion uses the AD-specific matching rule
 `LDAP_MATCHING_RULE_IN_CHAIN` (`1.2.840.113556.1.4.1941`).
 
-The password can also come from `$ROGI_PASSWORD` if you don't want to use a
+The password can also come from `$GO_CLI_AD_PASSWORD` if you don't want to use a
 prompt or `--password-stdin`.
 
-## Azure AD / Entra ID
+## Azure AD / Entra ID (CLI)
 
 ```sh
 # Run device code flow; prints a URL + code, completes after browser sign-in
-rogi-cli azure login
+go-cli-ad azure login
 
 # Re-list using the cached token (no re-auth)
-rogi-cli azure roles
+go-cli-ad azure roles
 
 # Expand nested group memberships
-rogi-cli azure login --transitive
+go-cli-ad azure login --transitive
 ```
 
-The access token is cached at `~/.config/rogi-cli/azure-token.json` (mode
-`0600`). When it expires, `rogi-cli azure roles` will tell you to run
+The access token is cached at `~/.config/go-cli-ad/azure-token.json` (mode
+`0600`). When it expires, `go-cli-ad azure roles` will tell you to run
 `azure login` again.
 
 ## Output
@@ -98,7 +117,7 @@ Memberships (3):
 `--json` for scripts:
 
 ```sh
-rogi-cli azure login --json | jq '.memberships[] | select(.type=="directoryRole")'
+go-cli-ad azure login --json | jq '.memberships[] | select(.type=="directoryRole")'
 ```
 
 ```json
@@ -138,12 +157,13 @@ rogi-cli azure login --json | jq '.memberships[] | select(.type=="directoryRole"
 ## Layout
 
 ```
-cmd/rogi-cli/main.go            entry point
-internal/cli/                   cobra commands
-internal/config/                YAML config loader
-internal/onprem/                LDAP client + nested group search
-internal/azure/                 device-code auth + Microsoft Graph queries
-internal/output/                text + JSON renderers
+cmd/go-cli-ad/main.go            entry point
+internal/cli/                    cobra commands; root.go auto-launches TUI on a TTY
+internal/tui/                    Bubble Tea screens (home, onprem, azure_login, azure_roles, config_init)
+internal/config/                 YAML config loader
+internal/onprem/                 LDAP client + nested group search
+internal/azure/                  device-code auth + Microsoft Graph queries
+internal/output/                 text + JSON renderers
 ```
 
 ## Non-goals

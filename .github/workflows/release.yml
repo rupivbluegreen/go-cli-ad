@@ -31,17 +31,17 @@ jobs:
             GOARCH=${OS_ARCH#*/}
             EXT=""
             [ "$GOOS" = "windows" ] && EXT=".exe"
-            OUT="rogi-cli-${VERSION}-${GOOS}-${GOARCH}${EXT}"
+            OUT="go-cli-ad-${VERSION}-${GOOS}-${GOARCH}${EXT}"
             echo "building $OUT"
             GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 \
-              go build -trimpath -ldflags="-s -w" -o "dist/$OUT" ./cmd/rogi-cli
+              go build -trimpath -ldflags="-s -w" -o "dist/$OUT" ./cmd/go-cli-ad
           done
           cd dist
-          for f in rogi-cli-*-darwin-* rogi-cli-*-linux-*; do
+          for f in go-cli-ad-*-darwin-* go-cli-ad-*-linux-*; do
             tar czf "${f}.tar.gz" "$f"
             rm "$f"
           done
-          for f in rogi-cli-*-windows-*.exe; do
+          for f in go-cli-ad-*-windows-*.exe; do
             zip -q "${f%.exe}.zip" "$f"
             rm "$f"
           done

@@ -1,26 +1,27 @@
 ---
 layout: default
-title: rogi-cli
+title: go-cli-ad
 ---
 
-# rogi-cli
+# go-cli-ad
 
 A small Go CLI that authenticates against **on-premises Active Directory**
 (LDAP) or **Azure AD / Entra ID** (device code flow), then lists the groups
 and directory roles you belong to.
 
-[View on GitHub](https://github.com/rupivbluegreen/rogi-cli){: .btn }
+[View on GitHub](https://github.com/rupivbluegreen/go-cli-ad){: .btn }
 
 ---
 
 ## Why
 
 If you've ever wondered *exactly* which AD groups or Entra roles your account
-belongs to — including ones inherited through nested groups — `rogi-cli`
+belongs to — including ones inherited through nested groups — `go-cli-ad`
 gives you a one-line answer from the terminal. It works against either
 backend with the same UX:
 
 - One subcommand tree per backend (`onprem` / `azure`)
+- Bubble Tea TUI auto-launches when you run the bare binary on a TTY
 - Plain text by default, `--json` for piping into `jq`
 - Recursive group expansion on by default for on-prem (`LDAP_MATCHING_RULE_IN_CHAIN`)
 - Device code flow for Azure — works with MFA and conditional access
@@ -28,21 +29,21 @@ backend with the same UX:
 
 ## Install
 
-Requires Go 1.24+.
+Requires Go 1.25+.
 
 ```sh
-git clone https://github.com/rupivbluegreen/rogi-cli
-cd rogi-cli
-go build -o bin/rogi-cli ./cmd/rogi-cli
+git clone https://github.com/rupivbluegreen/go-cli-ad
+cd go-cli-ad
+go build -o bin/go-cli-ad ./cmd/go-cli-ad
 ```
 
 ## First-time setup
 
 ```sh
-rogi-cli config init
+go-cli-ad config init
 ```
 
-Writes a starter config to `~/.config/rogi-cli/config.yaml`:
+Writes a starter config to `~/.config/go-cli-ad/config.yaml`:
 
 ```yaml
 onprem:
@@ -58,10 +59,21 @@ azure:
 
 ## Use
 
+### Interactive TUI
+
+```sh
+go-cli-ad
+```
+
+With no arguments on a TTY, the binary launches a Bubble Tea interface with
+a home menu for on-prem lookup, Azure sign-in, Azure roles (cached token),
+and `config init`. In non-TTY contexts (CI, pipes) the same command prints
+help. Keys: `↑`/`↓` navigate, `enter` select, `esc` back, `ctrl+c` quit.
+
 ### On-premises Active Directory
 
 ```sh
-rogi-cli onprem login
+go-cli-ad onprem login
 # Password: ********
 # ✓ Authenticated as CN=Alex P,OU=Users,DC=corp,DC=example,DC=com
 #
@@ -76,7 +88,7 @@ rogi-cli onprem login
 ### Azure AD / Entra ID
 
 ```sh
-rogi-cli azure login
+go-cli-ad azure login
 # To sign in, use a web browser to open https://microsoft.com/devicelogin
 # and enter the code XXXXXXXXX to authenticate.
 # ✓ Authenticated as alex@corp.example.com
@@ -86,14 +98,14 @@ rogi-cli azure login
 #   [G] Engineering
 #   [G] All Company
 
-rogi-cli azure roles            # reuse cached token
-rogi-cli azure login --transitive   # expand nested groups
+go-cli-ad azure roles            # reuse cached token
+go-cli-ad azure login --transitive   # expand nested groups
 ```
 
 ### JSON output
 
 ```sh
-rogi-cli azure login --json | jq '.memberships[] | select(.type=="directoryRole")'
+go-cli-ad azure login --json | jq '.memberships[] | select(.type=="directoryRole")'
 ```
 
 ```json
@@ -119,12 +131,13 @@ rogi-cli azure login --json | jq '.memberships[] | select(.type=="directoryRole"
 ## Layout
 
 ```
-cmd/rogi-cli/main.go            entry point
-internal/cli/                   cobra commands
-internal/config/                YAML config loader
-internal/onprem/                LDAP client + nested group search
-internal/azure/                 device-code auth + Microsoft Graph queries
-internal/output/                text + JSON renderers
+cmd/go-cli-ad/main.go            entry point
+internal/cli/                    cobra commands; root.go auto-launches TUI on a TTY
+internal/tui/                    Bubble Tea screens (home, onprem, azure_login, azure_roles, config_init)
+internal/config/                 YAML config loader
+internal/onprem/                 LDAP client + nested group search
+internal/azure/                  device-code auth + Microsoft Graph queries
+internal/output/                 text + JSON renderers
 ```
 
 ## Non-goals
@@ -135,4 +148,4 @@ internal/output/                text + JSON renderers
 
 ---
 
-[Source on GitHub](https://github.com/rupivbluegreen/rogi-cli) · MIT-style license forthcoming
+[Source on GitHub](https://github.com/rupivbluegreen/go-cli-ad) · MIT-style license forthcoming

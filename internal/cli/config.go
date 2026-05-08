@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/rupivbluegreen/rogi-cli/internal/config"
+	"github.com/rupivbluegreen/go-cli-ad/internal/config"
 )
 
 func newConfigCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage rogi-cli configuration",
+		Short: "Manage go-cli-ad configuration",
 	}
 	cmd.AddCommand(newConfigInitCmd())
 	return cmd
@@ -39,7 +39,7 @@ func newConfigInitCmd() *cobra.Command {
 				return withCode(ExitConfig, err)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Wrote starter config to %s\n", path)
-			fmt.Fprintln(cmd.OutOrStdout(), "Edit it to point at your AD server and Azure tenant, then run 'rogi-cli onprem login' or 'rogi-cli azure login'.")
+			fmt.Fprintln(cmd.OutOrStdout(), "Edit it to point at your AD server and Azure tenant, then run 'go-cli-ad onprem login' or 'go-cli-ad azure login'.")
 			return nil
 		},
 	}
@@ -61,7 +61,7 @@ func loadConfig() (*config.Config, string, error) {
 	if err != nil {
 		if errors.Is(err, config.ErrNotFound) {
 			return nil, path, withCode(ExitConfig,
-				fmt.Errorf("config file not found at %s — run 'rogi-cli config init'", path))
+				fmt.Errorf("config file not found at %s — run 'go-cli-ad config init'", path))
 		}
 		return nil, path, withCode(ExitConfig, err)
 	}

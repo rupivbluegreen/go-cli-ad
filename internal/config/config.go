@@ -41,7 +41,7 @@ func DefaultPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("locating user config dir: %w", err)
 	}
-	return filepath.Join(dir, "rogi-cli", "config.yaml"), nil
+	return filepath.Join(dir, "go-cli-ad", "config.yaml"), nil
 }
 
 func Load(path string) (*Config, error) {

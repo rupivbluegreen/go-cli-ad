@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/rupivbluegreen/rogi-cli/internal/onprem"
-	"github.com/rupivbluegreen/rogi-cli/internal/output"
+	"github.com/rupivbluegreen/go-cli-ad/internal/onprem"
+	"github.com/rupivbluegreen/go-cli-ad/internal/output"
 	"golang.org/x/term"
 )
 
@@ -124,7 +124,7 @@ func runOnpremLogin(cmd *cobra.Command, f *onpremFlags) error {
 
 // readPassword resolves the password from stdin, env, or interactive prompt.
 func readPassword(in io.Reader, errOut io.Writer, stdinFlag bool, username string) (string, error) {
-	if envPass := os.Getenv("ROGI_PASSWORD"); envPass != "" {
+	if envPass := os.Getenv("GO_CLI_AD_PASSWORD"); envPass != "" {
 		return envPass, nil
 	}
 	if stdinFlag {
@@ -138,7 +138,7 @@ func readPassword(in io.Reader, errOut io.Writer, stdinFlag bool, username strin
 	// stdout stays clean for piping).
 	fd := int(os.Stdin.Fd())
 	if !term.IsTerminal(fd) {
-		return "", errors.New("password required: pipe with --password-stdin or set ROGI_PASSWORD")
+		return "", errors.New("password required: pipe with --password-stdin or set GO_CLI_AD_PASSWORD")
 	}
 	fmt.Fprintf(errOut, "Password for %s: ", username)
 	pw, err := term.ReadPassword(fd)

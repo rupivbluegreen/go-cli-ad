@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-const starterTemplate = `# rogi-cli configuration
+const starterTemplate = `# go-cli-ad configuration
 # On-premises Active Directory (LDAP)
 onprem:
   server: ldaps://dc.corp.example.com:636

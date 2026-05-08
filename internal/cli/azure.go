@@ -7,8 +7,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/spf13/cobra"
-	"github.com/rupivbluegreen/rogi-cli/internal/azure"
-	"github.com/rupivbluegreen/rogi-cli/internal/output"
+	"github.com/rupivbluegreen/go-cli-ad/internal/azure"
+	"github.com/rupivbluegreen/go-cli-ad/internal/output"
 )
 
 func newAzureCmd() *cobra.Command {
@@ -62,8 +62,8 @@ func runAzureLogin(cmd *cobra.Command, transitive bool) error {
 		ctx = context.Background()
 	}
 
-	cred, cached, err := azure.DeviceCodeLogin(ctx, cfg.Azure.TenantID, cfg.Azure.ClientID, func(message string) {
-		fmt.Fprintln(cmd.ErrOrStderr(), message)
+	cred, cached, err := azure.DeviceCodeLogin(ctx, cfg.Azure.TenantID, cfg.Azure.ClientID, func(p azure.DeviceCodePrompt) {
+		fmt.Fprintln(cmd.ErrOrStderr(), p.Message)
 	})
 	if err != nil {
 		return withCode(ExitToken, err)
