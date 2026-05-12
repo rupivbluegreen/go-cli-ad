@@ -14,8 +14,36 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/spf13/cobra"
+)
 
 func newStatusCmd(g *Globals) *cobra.Command {
-	return &cobra.Command{Use: "status", Short: "Show token state and broker reachability"}
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show token state and broker reachability",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			tok, err := LoadToken(g.TokenPath)
+			if err != nil {
+				if errors.Is(err, ErrTokenNotFound) {
+					fmt.Fprintln(cmd.OutOrStdout(), "no cached token; run `ftsgw-cli login`")
+					return nil
+				}
+				return WithCode(ExitConfig, err)
+			}
+			now := time.Now().UTC()
+			ttl := tok.ExpiresAt.Sub(now)
+			win := tok.RefreshWindowEndsAt.Sub(now)
+			fmt.Fprintf(cmd.OutOrStdout(), "Broker:           %s\n", tok.BrokerURL)
+			fmt.Fprintf(cmd.OutOrStdout(), "Token expires in: %s\n", roundDur(ttl))
+			fmt.Fprintf(cmd.OutOrStdout(), "Refresh window:   %s remaining\n", roundDur(win))
+			return nil
+		},
+	}
 }
+
+func roundDur(d time.Duration) time.Duration { return d.Round(time.Second) }

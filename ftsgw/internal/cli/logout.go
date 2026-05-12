@@ -14,8 +14,26 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 func newLogoutCmd(g *Globals) *cobra.Command {
-	return &cobra.Command{Use: "logout", Short: "Revoke current token and remove local cache"}
+	return &cobra.Command{
+		Use:   "logout",
+		Short: "Revoke current token and remove local cache",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := NewClient(ClientConfig{BrokerURL: g.BrokerURL, TokenPath: g.TokenPath, CABundlePath: g.CABundlePath})
+			if err != nil {
+				return WithCode(ExitConfig, err)
+			}
+			if err := c.Logout(); err != nil {
+				return WithCode(ExitNetwork, err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "logged out")
+			return nil
+		},
+	}
 }

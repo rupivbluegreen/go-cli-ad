@@ -14,8 +14,40 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 func newWhoamiCmd(g *Globals) *cobra.Command {
-	return &cobra.Command{Use: "whoami", Short: "Print current identity and groups"}
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "whoami",
+		Short: "Print current identity and groups",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := NewClient(ClientConfig{BrokerURL: g.BrokerURL, TokenPath: g.TokenPath, CABundlePath: g.CABundlePath})
+			if err != nil {
+				return WithCode(ExitConfig, err)
+			}
+			me, err := c.Me()
+			if err != nil {
+				if errors.Is(err, ErrSessionExpired) || errors.Is(err, ErrTokenNotFound) {
+					return WithCode(ExitSessionExpired, err)
+				}
+				return WithCode(ExitNetwork, err)
+			}
+			if asJSON {
+				return json.NewEncoder(cmd.OutOrStdout()).Encode(me)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "UPN:    %s\n", me.UPN)
+			fmt.Fprintf(cmd.OutOrStdout(), "Name:   %s\n", me.DisplayName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Groups: %v\n", me.Groups)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "emit JSON")
+	return cmd
 }
