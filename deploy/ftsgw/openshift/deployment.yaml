@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftsgw-server
+  namespace: ftsgw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ftsgw-server
+  template:
+    metadata:
+      labels:
+        app: ftsgw-server
+    spec:
+      serviceAccountName: ftsgw-server
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: ftsgw-server
+        image: image-registry.openshift-image-registry.svc:5000/ftsgw/ftsgw-server:0.1.0
+        args: ["--config","/etc/ftsgw-server/config.yaml"]
+        ports:
+        - containerPort: 8443
+          name: https
+        env:
+        - name: FTSGW_LDAP_BIND_DN
+          valueFrom:
+            secretKeyRef:
+              name: ftsgw-ldap-bind
+              key: dn
+        - name: FTSGW_LDAP_BIND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ftsgw-ldap-bind
+              key: password
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "otel-collector.observability.svc:4317"
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8443
+            scheme: HTTPS
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/ftsgw-server
+          readOnly: true
+        - name: tls
+          mountPath: /etc/ftsgw-server/tls
+          readOnly: true
+        - name: signing
+          mountPath: /etc/ftsgw-server/keys
+          readOnly: true
+        - name: var
+          mountPath: /var/log/ftsgw-server
+      volumes:
+      - name: config
+        configMap:
+          name: ftsgw-server-config
+      - name: tls
+        secret:
+          secretName: ftsgw-server-tls
+      - name: signing
+        secret:
+          secretName: ftsgw-signing-key
+          defaultMode: 384
+      - name: var
+        emptyDir:
+          sizeLimit: 1Gi
