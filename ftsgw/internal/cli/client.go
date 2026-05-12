@@ -89,7 +89,7 @@ func (c *Client) Login(username, password string) error {
 	if err != nil {
 		return fmt.Errorf("post token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized {
 		return ErrAuth
 	}
@@ -121,7 +121,7 @@ func (c *Client) Me() (*types.MeResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get /me: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("me: %s", resp.Status)
 	}
@@ -176,7 +176,7 @@ func (c *Client) ensureFresh() (*StoredToken, error) {
 		}
 		return nil, fmt.Errorf("refresh: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized {
 		_, _ = io.Copy(io.Discard, resp.Body)
 		return nil, ErrSessionExpired

@@ -59,7 +59,7 @@ func TestLoggerWritesBothSinks(t *testing.T) {
 	}
 	// File
 	f, _ := os.Open(path)
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	sc := bufio.NewScanner(f)
 	if !sc.Scan() {
 		t.Fatalf("no line written")

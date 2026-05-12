@@ -52,8 +52,8 @@ func TestLoadMissingRequiredField(t *testing.T) {
 }
 
 func TestLoadMissingEnvSecret(t *testing.T) {
-	os.Unsetenv("FTSGW_LDAP_BIND_DN")
-	os.Unsetenv("FTSGW_LDAP_BIND_PASSWORD")
+	_ = os.Unsetenv("FTSGW_LDAP_BIND_DN")
+	_ = os.Unsetenv("FTSGW_LDAP_BIND_PASSWORD")
 	_, err := config.Load(filepath.Join("testdata", "valid.yaml"))
 	if err == nil {
 		t.Fatalf("want env-secret error")

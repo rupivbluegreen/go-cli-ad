@@ -75,7 +75,7 @@ func mkBrokerDeps(t *testing.T, p idp.IdentityProvider) (*api.Deps, *auth.Issuer
 	st, _ := store.Open(filepath.Join(dir, "f.db"))
 	t.Cleanup(func() { st.Close() })
 	lg, _ := audit.NewLogger(filepath.Join(dir, "audit.log"), st)
-	t.Cleanup(func() { lg.Close() })
+	t.Cleanup(func() { _ = lg.Close() })
 	sgnr := mkSigner(t)
 	iss, _ := auth.NewIssuer(auth.IssuerConfig{
 		Signer: sgnr, Store: st, Clock: auth.RealClock{},
