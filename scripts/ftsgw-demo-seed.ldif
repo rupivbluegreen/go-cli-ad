@@ -1,0 +1,11 @@
+dn: cn=alice,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: alice
+sn: A
+userPassword: hunter2
+userPrincipalName: alice@example.com
+
+dn: cn=engineers,dc=example,dc=com
+objectClass: groupOfNames
+cn: engineers
+member: cn=alice,dc=example,dc=com
