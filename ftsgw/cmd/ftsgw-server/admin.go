@@ -52,7 +52,7 @@ func runRevoke(args []string) int {
 		fmt.Fprintln(os.Stderr, "store:", err)
 		return 1
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	if err := st.Revoke(context.Background(), *jti, *actor, *reason, time.Now().Add(*exp).UTC()); err != nil {
 		fmt.Fprintln(os.Stderr, "revoke:", err)
 		return 1

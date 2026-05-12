@@ -86,13 +86,13 @@ func serve() error {
 	if err != nil {
 		return fmt.Errorf("store: %w", err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	auditLg, err := audit.NewLogger(cfg.Audit.FilePath, st)
 	if err != nil {
 		return fmt.Errorf("audit: %w", err)
 	}
-	defer auditLg.Close()
+	defer func() { _ = auditLg.Close() }()
 	audit.OnAuditFailure = func() { api.AuditWriteFailuresTotal.Inc() }
 
 	sgnr, err := signer.NewFileSigner(cfg.Signer.KeyPath, cfg.Signer.KeyID)

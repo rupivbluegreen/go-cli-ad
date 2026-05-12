@@ -74,9 +74,9 @@ func TestE2EHappyPathAndRefresh(t *testing.T) {
 	_ = os.WriteFile(keyPath, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: priv.Seed()}), 0o600)
 	sgnr, _ := signer.NewFileSigner(keyPath, "kid-1")
 	st, _ := store.Open(filepath.Join(dir, "f.db"))
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	lg, _ := audit.NewLogger(filepath.Join(dir, "audit.log"), st)
-	defer lg.Close()
+	defer func() { _ = lg.Close() }()
 	clk := &controlClock{t: time.Date(2026, 5, 7, 14, 0, 0, 0, time.UTC)}
 	iss, _ := auth.NewIssuer(auth.IssuerConfig{
 		Signer: sgnr, Store: st, Clock: clk,

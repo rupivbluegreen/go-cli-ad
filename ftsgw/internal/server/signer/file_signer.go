@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 )
 
 // FileSigner loads an Ed25519 seed from a PEM file with mode 0600.
@@ -35,7 +36,9 @@ func NewFileSigner(path, keyID string) (*FileSigner, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stat signing key: %w", err)
 	}
-	if info.Mode().Perm() != 0o600 {
+	// Windows uses ACLs, not POSIX mode bits, so os.Chmod cannot produce 0600
+	// there. Skip the check on Windows; operators secure the key via NTFS ACLs.
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		return nil, fmt.Errorf("signing key %s must be mode 0600, got %o", path, info.Mode().Perm())
 	}
 	raw, err := os.ReadFile(path)
