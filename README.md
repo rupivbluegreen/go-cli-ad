@@ -172,3 +172,28 @@ internal/output/                 text + JSON renderers
 - Writing to AD (read-only)
 - macOS Keychain / Linux Secret Service token storage (file cache with `0600`
   perms only, for now)
+
+---
+
+## ftsgw — authentication broker + CLI
+
+This repository also ships a second product, **ftsgw**, an authentication
+broker (`ftsgw-server`) and its companion CLI (`ftsgw-cli`). It is unrelated
+to `go-cli-ad` and lives entirely under `/ftsgw/`.
+
+Quickstart (requires Docker for the demo OpenLDAP):
+
+```sh
+make ftsgw-build
+make ftsgw-demo
+```
+
+`make ftsgw-demo` boots OpenLDAP in a container, seeds a user, runs the
+broker against it, then walks `login -> whoami -> status -> logout`.
+
+See:
+- `docs/ftsgw/auth-flow.md` — full sequence diagrams.
+- `docs/ftsgw/threat-model.md` — STRIDE.
+- `docs/ftsgw/deployment.md` — config + secrets + rotation + SQLite backup.
+- `DECISIONS.md` — architecture decision records.
+- `PHASE_1_NOTES.md` — Entra seams.
