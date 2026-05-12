@@ -3,7 +3,6 @@ objectClass: inetOrgPerson
 cn: alice
 sn: A
 userPassword: hunter2
-userPrincipalName: alice@example.com
 
 dn: cn=engineers,dc=example,dc=com
 objectClass: groupOfNames

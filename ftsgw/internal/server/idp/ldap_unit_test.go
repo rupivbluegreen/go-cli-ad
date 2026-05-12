@@ -30,3 +30,27 @@ func TestEscapeFilterValue(t *testing.T) {
 		}
 	}
 }
+
+func TestLooksLikeDN(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{"cn=alice,dc=example,dc=com", true},
+		{"uid=bob,ou=people,dc=corp,dc=local", true},
+		{"alice", false},
+		{"alice@example.com", false},
+		{"", false},
+		{"=foo", false},                // empty attribute name
+		{"cn=alice", false},            // no separator comma
+		{"alice,bob", false},           // no equals
+		{",cn=alice", false},           // comma before equals
+		{"cn=alice,dc=example,", true}, // trailing comma still positive
+	}
+	for _, c := range cases {
+		got := looksLikeDN(c.in)
+		if got != c.want {
+			t.Fatalf("looksLikeDN(%q) = %v, want %v", c.in, got, c.want)
+		}
+	}
+}
