@@ -18,6 +18,9 @@ package audit
 type EventType string
 
 const (
+	EventChallengeCompleted     EventType = "challenge_completed"
+	EventChallengeInitiated     EventType = "challenge_initiated"
+	EventChallengeRefused       EventType = "challenge_refused"
 	EventIdPHealthCheck         EventType = "idp_health_check"
 	EventPasswordAuthenticated  EventType = "password_authenticated"
 	EventPasswordRejected       EventType = "password_rejected"
