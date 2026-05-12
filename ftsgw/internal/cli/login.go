@@ -15,16 +15,20 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
 
 func newLoginCmd(g *Globals) *cobra.Command {
-	return &cobra.Command{
+	var passwordStdin bool
+	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Authenticate with the broker",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -36,21 +40,15 @@ func newLoginCmd(g *Globals) *cobra.Command {
 			if username == "" {
 				return WithCode(ExitConfig, errors.New("username required"))
 			}
-			fd := int(os.Stdin.Fd())
-			if !term.IsTerminal(fd) {
-				return WithCode(ExitConfig, errors.New("password requires a terminal"))
-			}
-			fmt.Fprint(cmd.ErrOrStderr(), "Password: ")
-			pw, err := term.ReadPassword(fd)
-			fmt.Fprintln(cmd.ErrOrStderr())
+			pw, err := readPassword(cmd, passwordStdin)
 			if err != nil {
-				return WithCode(ExitGeneric, fmt.Errorf("read password: %w", err))
+				return err
 			}
 			c, err := NewClient(ClientConfig{BrokerURL: g.BrokerURL, TokenPath: g.TokenPath, CABundlePath: g.CABundlePath})
 			if err != nil {
 				return WithCode(ExitConfig, err)
 			}
-			if err := c.Login(username, string(pw)); err != nil {
+			if err := c.Login(username, pw); err != nil {
 				if errors.Is(err, ErrAuth) {
 					return WithCode(ExitAuthFailed, err)
 				}
@@ -60,4 +58,36 @@ func newLoginCmd(g *Globals) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "Read password from stdin instead of prompting (use for scripted automation; password is never put in argv or env)")
+	return cmd
+}
+
+// readPassword either prompts on the TTY (interactive) or reads a single line
+// from stdin (--password-stdin). The stdin path supports `echo pw | ftsgw-cli
+// login --password-stdin` style automation without exposing the password via
+// argv, environment, or /proc.
+func readPassword(cmd *cobra.Command, fromStdin bool) (string, error) {
+	if fromStdin {
+		r := bufio.NewReader(cmd.InOrStdin())
+		line, err := r.ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return "", WithCode(ExitGeneric, fmt.Errorf("read password from stdin: %w", err))
+		}
+		pw := strings.TrimRight(line, "\r\n")
+		if pw == "" {
+			return "", WithCode(ExitConfig, errors.New("empty password on stdin"))
+		}
+		return pw, nil
+	}
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return "", WithCode(ExitConfig, errors.New("password requires a terminal; use --password-stdin for scripts"))
+	}
+	fmt.Fprint(cmd.ErrOrStderr(), "Password: ")
+	pw, err := term.ReadPassword(fd)
+	fmt.Fprintln(cmd.ErrOrStderr())
+	if err != nil {
+		return "", WithCode(ExitGeneric, fmt.Errorf("read password: %w", err))
+	}
+	return string(pw), nil
 }

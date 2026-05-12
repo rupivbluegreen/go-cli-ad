@@ -20,7 +20,9 @@ data:
       bind_dn_env: FTSGW_LDAP_BIND_DN
       bind_password_env: FTSGW_LDAP_BIND_PASSWORD
       user_search_filter:  "(userPrincipalName=%s)"
-      group_search_filter: "(member=%s)"
+      # AD transitive group expansion via matching-rule-in-chain OID. Use
+      # "(member=%s)" instead for plain LDAP / direct memberships only.
+      group_search_filter: "(member:1.2.840.113556.1.4.1941:=%s)"
       ca_bundle_path: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
       start_tls: false
       timeout: 10s

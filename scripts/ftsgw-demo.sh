@@ -27,7 +27,7 @@ docker cp scripts/ftsgw-demo-seed.ldif ftsgw-demo-ldap:/seed.ldif
 docker exec ftsgw-demo-ldap ldapadd -x -D 'cn=admin,dc=example,dc=com' -w admin -f /seed.ldif
 
 echo "==> generating TLS + signing key"
-openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=localhost" \
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
   -keyout "$WORK/server.key" -out "$WORK/server.crt" >/dev/null 2>&1
 openssl genpkey -algorithm Ed25519 -out "$WORK/signing.pem"
 python3 - "$WORK/signing.pem" "$WORK/signing.ed25519" <<'PY'
@@ -57,7 +57,7 @@ done
 echo "==> ftsgw-cli login -> whoami -> status -> logout"
 export FTSGW_USERNAME='cn=alice,dc=example,dc=com'
 echo hunter2 | "$ROOT/bin/ftsgw-cli" --broker https://localhost:18443 --ca-bundle "$WORK/server.crt" \
-  --token-path "$WORK/token.json" login
+  --token-path "$WORK/token.json" login --password-stdin
 "$ROOT/bin/ftsgw-cli" --broker https://localhost:18443 --ca-bundle "$WORK/server.crt" --token-path "$WORK/token.json" whoami
 "$ROOT/bin/ftsgw-cli" --broker https://localhost:18443 --ca-bundle "$WORK/server.crt" --token-path "$WORK/token.json" status
 "$ROOT/bin/ftsgw-cli" --broker https://localhost:18443 --ca-bundle "$WORK/server.crt" --token-path "$WORK/token.json" logout

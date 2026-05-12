@@ -86,14 +86,30 @@ func (p *LDAPProvider) Lookup(ctx context.Context, upn string) (*Identity, error
 }
 
 func (p *LDAPProvider) lookupAfterBind(conn *ldap.Conn, username string) (*Identity, error) {
-	filter := fmt.Sprintf(p.cfg.UserSearchFilter, escapeFilterValue(username))
-	res, err := conn.Search(ldap.NewSearchRequest(
-		p.cfg.BaseDN, ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
-		1, int(p.cfg.Timeout.Seconds()), false,
-		filter,
-		[]string{"distinguishedName", "userPrincipalName", "displayName", "cn"},
-		nil,
-	))
+	// If the bind credential was a DN (common with vanilla OpenLDAP, which
+	// rejects bind-by-UPN), do a base-scope lookup at that DN. Subtree search
+	// with a UPN/CN filter wouldn't match because the value still looks like
+	// a DN. AD/Entra environments pass a UPN here and fall through.
+	var req *ldap.SearchRequest
+	if looksLikeDN(username) {
+		req = ldap.NewSearchRequest(
+			username, ldap.ScopeBaseObject, ldap.NeverDerefAliases,
+			1, int(p.cfg.Timeout.Seconds()), false,
+			"(objectClass=*)",
+			[]string{"distinguishedName", "userPrincipalName", "displayName", "cn"},
+			nil,
+		)
+	} else {
+		filter := fmt.Sprintf(p.cfg.UserSearchFilter, escapeFilterValue(username))
+		req = ldap.NewSearchRequest(
+			p.cfg.BaseDN, ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
+			1, int(p.cfg.Timeout.Seconds()), false,
+			filter,
+			[]string{"distinguishedName", "userPrincipalName", "displayName", "cn"},
+			nil,
+		)
+	}
+	res, err := conn.Search(req)
 	if err != nil {
 		return nil, fmt.Errorf("user search: %w", err)
 	}
@@ -120,11 +136,17 @@ func (p *LDAPProvider) lookupAfterBind(conn *ldap.Conn, username string) (*Ident
 	return &Identity{UPN: upn, DisplayName: display, Groups: groups}, nil
 }
 
-// pagedGroupSearch uses LDAP_MATCHING_RULE_IN_CHAIN (1.2.840.113556.1.4.1941)
-// and RFC 2696 paged controls to enumerate transitive group membership.
+// pagedGroupSearch substitutes the user's DN into the configured group
+// search filter and enumerates matches with RFC 2696 paging. The operator
+// chooses the filter shape per backend:
+//   - AD with transitive expansion: "(member:1.2.840.113556.1.4.1941:=%s)"
+//   - OpenLDAP / direct membership: "(member=%s)"
+//   - Novell eDir / groupMembership: "(groupMembership=%s)"
+//
+// Anything matching the filter at subtree scope under BaseDN is returned;
+// the entry's cn attribute is the group name in the resulting slice.
 func (p *LDAPProvider) pagedGroupSearch(conn *ldap.Conn, userDN string) ([]string, error) {
-	const matchingRuleInChain = "1.2.840.113556.1.4.1941"
-	filter := fmt.Sprintf("(member:%s:=%s)", matchingRuleInChain, escapeFilterValue(userDN))
+	filter := fmt.Sprintf(p.cfg.GroupSearchFilter, escapeFilterValue(userDN))
 	req := ldap.NewSearchRequest(
 		p.cfg.BaseDN, ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, int(p.cfg.Timeout.Seconds()), false,
@@ -205,6 +227,18 @@ func (p *LDAPProvider) dial(ctx context.Context) (*ldap.Conn, error) {
 	}
 	_ = ctx // reserved for future cancellation
 	return conn, nil
+}
+
+// looksLikeDN returns true when s appears to be a distinguished name (contains
+// at least one RDN like "cn=alice" plus a "," component separator). It is a
+// heuristic used by lookupAfterBind to pick base-scope lookup over a subtree
+// filter search.
+func looksLikeDN(s string) bool {
+	eq := strings.IndexByte(s, '=')
+	if eq <= 0 {
+		return false
+	}
+	return strings.IndexByte(s, ',') > eq
 }
 
 // escapeFilterValue applies RFC 4515 string-representation escaping.

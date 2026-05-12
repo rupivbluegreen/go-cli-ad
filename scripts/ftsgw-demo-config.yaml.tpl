@@ -12,7 +12,7 @@ idp:
   base_dn: "dc=example,dc=com"
   bind_dn_env: FTSGW_LDAP_BIND_DN
   bind_password_env: FTSGW_LDAP_BIND_PASSWORD
-  user_search_filter:  "(|(userPrincipalName=%s)(cn=%s))"
+  user_search_filter:  "(cn=%s)"
   group_search_filter: "(member=%s)"
   start_tls: false
   timeout: 10s
