@@ -58,3 +58,7 @@ type LogWriter interface {
 	Write(ctx context.Context, e Event) error
 	Close() error
 }
+
+// OnAuditFailure is invoked when Logger.Write returns an error. Override
+// from main to wire to a Prometheus counter (avoids circular import).
+var OnAuditFailure = func() {}

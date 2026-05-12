@@ -67,6 +67,8 @@ func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
 			start := time.Now()
 			sw := &statusRecorder{ResponseWriter: w, status: 200}
 			next.ServeHTTP(sw, r)
+			HTTPRequestsTotal.WithLabelValues(r.URL.Path, http.StatusText(sw.status)).Inc()
+			HTTPDuration.WithLabelValues(r.URL.Path).Observe(time.Since(start).Seconds())
 			logger.Info("http_request",
 				"request_id", RequestIDFrom(r.Context()),
 				"method", r.Method,

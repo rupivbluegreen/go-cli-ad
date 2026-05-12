@@ -79,6 +79,7 @@ func (l *Logger) Write(ctx context.Context, e Event) error {
 	}
 	pj, err := json.Marshal(payload)
 	if err != nil {
+		OnAuditFailure()
 		return fmt.Errorf("marshal audit: %w", err)
 	}
 	if err := l.st.WriteEvent(ctx, store.EventRow{
@@ -93,11 +94,13 @@ func (l *Logger) Write(ctx context.Context, e Event) error {
 		TraceID:     e.TraceID,
 		PayloadJSON: string(pj),
 	}); err != nil {
+		OnAuditFailure()
 		return err
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if _, err := l.file.Write(append(pj, '\n')); err != nil {
+		OnAuditFailure()
 		return fmt.Errorf("write audit file: %w", err)
 	}
 	return nil

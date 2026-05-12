@@ -43,6 +43,7 @@ func HandleTokenIssue(d *Deps) http.HandlerFunc {
 			return
 		}
 		if !d.RateLimiter.AllowAuth(req.Username) {
+			RateLimitedTotal.WithLabelValues("/v1/auth/token").Inc()
 			_ = d.Audit.Write(r.Context(), audit.Event{
 				RequestID: RequestIDFrom(r.Context()), ActorUPN: req.Username,
 				Event: audit.EventRateLimited, Outcome: "failure",
@@ -52,6 +53,7 @@ func HandleTokenIssue(d *Deps) http.HandlerFunc {
 		}
 		ident, err := d.IdP.Authenticate(r.Context(), req.Username, req.Password)
 		if err != nil {
+			PasswordAuthTotal.WithLabelValues("failure").Inc()
 			_ = d.Audit.Write(r.Context(), audit.Event{
 				RequestID: RequestIDFrom(r.Context()), ActorUPN: req.Username,
 				Event: audit.EventPasswordRejected, Outcome: "failure", Reason: errorReason(err),
@@ -59,6 +61,7 @@ func HandleTokenIssue(d *Deps) http.HandlerFunc {
 			WriteProblem(w, HTTPStatusFor(err), "Authentication Failed", "credentials rejected", RequestIDFrom(r.Context()))
 			return
 		}
+		PasswordAuthTotal.WithLabelValues("success").Inc()
 		_ = d.Audit.Write(r.Context(), audit.Event{
 			RequestID: RequestIDFrom(r.Context()), ActorUPN: ident.UPN,
 			Event: audit.EventPasswordAuthenticated, Outcome: "success",
@@ -68,6 +71,7 @@ func HandleTokenIssue(d *Deps) http.HandlerFunc {
 			WriteProblem(w, http.StatusInternalServerError, "Mint Failed", err.Error(), RequestIDFrom(r.Context()))
 			return
 		}
+		TokensIssuedTotal.Inc()
 		_ = d.Audit.Write(r.Context(), audit.Event{
 			RequestID: RequestIDFrom(r.Context()), ActorUPN: ident.UPN,
 			Event: audit.EventTokenIssued, Outcome: "success",
@@ -87,6 +91,7 @@ func HandleTokenRefresh(d *Deps) http.HandlerFunc {
 		}
 		tok, err := d.Issuer.Refresh(r.Context(), raw)
 		if err != nil {
+			TokensRefreshRefusedTotal.WithLabelValues(simpleReason(err)).Inc()
 			_ = d.Audit.Write(r.Context(), audit.Event{
 				RequestID: RequestIDFrom(r.Context()),
 				Event:     audit.EventTokenRefreshRefused, Outcome: "failure", Reason: errorReason(err),
@@ -94,6 +99,7 @@ func HandleTokenRefresh(d *Deps) http.HandlerFunc {
 			WriteProblem(w, HTTPStatusFor(err), "Refresh Refused", err.Error(), RequestIDFrom(r.Context()))
 			return
 		}
+		TokensRefreshedTotal.Inc()
 		_ = d.Audit.Write(r.Context(), audit.Event{
 			RequestID: RequestIDFrom(r.Context()),
 			Event:     audit.EventTokenRefreshed, Outcome: "success",
@@ -124,6 +130,7 @@ func HandleLogout(d *Deps) http.HandlerFunc {
 			WriteProblem(w, http.StatusInternalServerError, "Revoke Failed", err.Error(), RequestIDFrom(r.Context()))
 			return
 		}
+		TokensRevokedTotal.Inc()
 		extras := map[string]any{}
 		if claims != nil {
 			extras["jti"] = claims.JTI
@@ -164,6 +171,21 @@ func errorReason(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func simpleReason(err error) string {
+	switch {
+	case errors.Is(err, auth.ErrExpired):
+		return "expired"
+	case errors.Is(err, auth.ErrRefreshWindowExhausted):
+		return "refresh_window"
+	case errors.Is(err, auth.ErrRevoked):
+		return "revoked"
+	case errors.Is(err, auth.ErrInvalidSignature):
+		return "signature"
+	default:
+		return "other"
+	}
 }
 
 // authnFromBearer is the helper used by /v1/me. It enforces validity and
