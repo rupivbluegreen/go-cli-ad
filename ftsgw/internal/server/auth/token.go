@@ -22,6 +22,7 @@ package auth
 import (
 	"context"
 	"crypto"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"io"
@@ -261,6 +262,12 @@ func toStringSlice(v any) ([]string, bool) {
 	}
 	return nil, false
 }
+
+// PublicVerificationKey returns the signer's public verification key.
+func (i *Issuer) PublicVerificationKey() ed25519.PublicKey { return i.cfg.Signer.PublicKey() }
+
+// VerificationKeyID returns the kid that matches PublicVerificationKey.
+func (i *Issuer) VerificationKeyID() string { return i.cfg.Signer.KeyID() }
 
 // PruneRevocations deletes revoked rows whose exp has passed.
 // Run from a goroutine on a ticker (every 5 minutes is typical).
