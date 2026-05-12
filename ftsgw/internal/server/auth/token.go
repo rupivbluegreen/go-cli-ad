@@ -262,6 +262,13 @@ func toStringSlice(v any) ([]string, bool) {
 	return nil, false
 }
 
+// PruneRevocations deletes revoked rows whose exp has passed.
+// Run from a goroutine on a ticker (every 5 minutes is typical).
+func (i *Issuer) PruneRevocations(ctx context.Context) error {
+	_, err := i.cfg.Store.PruneExpired(ctx, i.cfg.Clock.Now())
+	return err
+}
+
 // ed25519PrivateAdapter lets jwx call our Signer without exposing the raw private key.
 type ed25519PrivateAdapter struct{ sig signer.Signer }
 
