@@ -29,10 +29,10 @@ import (
 func TestExtrasMustNotContainSecrets(t *testing.T) {
 	dir := t.TempDir()
 	st, _ := store.Open(filepath.Join(dir, "f.db"))
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	path := filepath.Join(dir, "audit.log")
 	lg, _ := audit.NewLogger(path, st)
-	defer lg.Close()
+	defer func() { _ = lg.Close() }()
 	err := lg.Write(context.Background(), audit.Event{
 		TS:        time.Now().UTC(),
 		RequestID: "r",

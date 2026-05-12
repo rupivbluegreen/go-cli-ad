@@ -56,7 +56,7 @@ func (p *LDAPProvider) Authenticate(ctx context.Context, username, password stri
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	if err := conn.Bind(username, password); err != nil {
 		var le *ldap.Error
 		if errors.As(err, &le) && le.ResultCode == ldap.LDAPResultInvalidCredentials {
@@ -78,7 +78,7 @@ func (p *LDAPProvider) Lookup(ctx context.Context, upn string) (*Identity, error
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	if err := conn.Bind(p.cfg.BindDN, p.cfg.BindPassword); err != nil {
 		return nil, fmt.Errorf("service bind: %w", err)
 	}
@@ -161,7 +161,7 @@ func (p *LDAPProvider) HealthCheck(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	if p.cfg.BindDN == "" {
 		return nil
 	}

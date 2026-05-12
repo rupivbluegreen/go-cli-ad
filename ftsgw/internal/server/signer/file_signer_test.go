@@ -20,6 +20,7 @@ import (
 	"encoding/pem"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/rupivbluegreen/go-cli-ad/ftsgw/internal/server/signer"
@@ -60,6 +61,9 @@ func TestFileSignerRoundTrip(t *testing.T) {
 }
 
 func TestFileSignerRejectsBadPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX mode bits not honored on Windows; security via NTFS ACLs")
+	}
 	path := writeKey(t)
 	if err := os.Chmod(path, 0o644); err != nil {
 		t.Fatalf("chmod: %v", err)

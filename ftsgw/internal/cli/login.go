@@ -31,7 +31,7 @@ func newLoginCmd(g *Globals) *cobra.Command {
 			username := os.Getenv("FTSGW_USERNAME")
 			if username == "" {
 				fmt.Fprint(cmd.ErrOrStderr(), "Username: ")
-				fmt.Fscanln(cmd.InOrStdin(), &username)
+				_, _ = fmt.Fscanln(cmd.InOrStdin(), &username)
 			}
 			if username == "" {
 				return WithCode(ExitConfig, errors.New("username required"))
