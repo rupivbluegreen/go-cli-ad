@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ftsgw-server-config
+  namespace: ftsgw
+data:
+  config.yaml: |
+    server:
+      listen_addr: ":8443"
+      tls_cert_path: /etc/ftsgw-server/tls/tls.crt
+      tls_key_path:  /etc/ftsgw-server/tls/tls.key
+    signer:
+      kind: file
+      key_path: /etc/ftsgw-server/keys/signing.ed25519
+      key_id:   ftsgw-2026-01
+    idp:
+      kind: ldap
+      url:  ldaps://ldap.internal:636
+      base_dn: "DC=bank,DC=example"
+      bind_dn_env: FTSGW_LDAP_BIND_DN
+      bind_password_env: FTSGW_LDAP_BIND_PASSWORD
+      user_search_filter:  "(userPrincipalName=%s)"
+      group_search_filter: "(member=%s)"
+      ca_bundle_path: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+      start_tls: false
+      timeout: 10s
+    tokens:
+      ttl: 15m
+      refresh_window: 4h
+      issuer:   "ftsgw-server"
+      audience: "ftsgw"
+    audit:
+      file_path: /var/log/ftsgw-server/audit.log
+      syslog: { enabled: false, addr: "", network: tcp+tls }
+    ratelimit:
+      per_ip_rps: 5
+      per_ip_burst: 10
+      auth_per_username_per_minute: 3

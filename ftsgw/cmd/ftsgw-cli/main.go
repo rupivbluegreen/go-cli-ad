@@ -1,0 +1,40 @@
+// Copyright 2026 The ftsgw Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"errors"
+	"fmt"
+	"os"
+
+	"github.com/rupivbluegreen/go-cli-ad/ftsgw/internal/cli"
+)
+
+var (
+	version = "dev"
+	commit  = "unknown"
+)
+
+func main() {
+	root := cli.NewRootCmd(version, commit)
+	if err := root.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, "ftsgw-cli:", err)
+		var coded *cli.Coded
+		if errors.As(err, &coded) {
+			os.Exit(coded.Code)
+		}
+		os.Exit(cli.ExitGeneric)
+	}
+}
