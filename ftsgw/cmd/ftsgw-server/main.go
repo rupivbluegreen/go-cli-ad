@@ -158,7 +158,7 @@ func buildProvider(cfg *config.Config) (idp.IdentityProvider, error) {
 			CABundlePath: cfg.IdP.CABundlePath, StartTLS: cfg.IdP.StartTLS, Timeout: cfg.IdP.Timeout,
 		}), nil
 	case "entra":
-		return idp.EntraProvider{}, nil
+		return nil, errors.New("entra: config wiring not yet implemented (use NewEntraProvider once idp config grows tenant_id/client_id)")
 	case "adfs":
 		return idp.ADFSProvider{}, nil
 	}

@@ -68,3 +68,21 @@ type ProblemDetails struct {
 	// RequestID is non-standard but operationally essential.
 	RequestID string `json:"request_id,omitempty"`
 }
+
+// ChallengeResponse is returned by POST /v1/auth/token with HTTP 202 when the
+// configured IdP is challenge-based (e.g. Entra device-code flow). The client
+// displays UserCode + VerificationURI to the user and polls
+// POST /v1/auth/token/complete with ChallengeID at IntervalSeconds until a
+// 200 TokenResponse or a terminal 4xx ProblemDetails is returned.
+type ChallengeResponse struct {
+	ChallengeID      string `json:"challenge_id"`
+	UserCode         string `json:"user_code"`
+	VerificationURI  string `json:"verification_uri"`
+	ExpiresInSeconds int    `json:"expires_in_seconds"`
+	IntervalSeconds  int    `json:"interval_seconds"`
+}
+
+// CompleteChallengeRequest is the body of POST /v1/auth/token/complete.
+type CompleteChallengeRequest struct {
+	ChallengeID string `json:"challenge_id"`
+}

@@ -22,14 +22,6 @@ import (
 	"github.com/rupivbluegreen/go-cli-ad/ftsgw/internal/server/idp"
 )
 
-func TestEntraStubReturnsNotImplemented(t *testing.T) {
-	p := idp.EntraProvider{}
-	_, err := p.Authenticate(context.Background(), "alice", "p")
-	if !errors.Is(err, idp.ErrNotImplemented) {
-		t.Fatalf("got %v", err)
-	}
-}
-
 func TestADFSStubReturnsNotImplemented(t *testing.T) {
 	p := idp.ADFSProvider{}
 	_, err := p.Authenticate(context.Background(), "alice", "p")

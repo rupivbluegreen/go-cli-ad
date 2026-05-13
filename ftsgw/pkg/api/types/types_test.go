@@ -51,3 +51,36 @@ func TestProblemDetailsContentType(t *testing.T) {
 		t.Fatalf("got %q", types.ProblemContentType)
 	}
 }
+
+func TestChallengeResponseJSONRoundtrip(t *testing.T) {
+	in := types.ChallengeResponse{
+		ChallengeID:      "01HXY9F3MM",
+		UserCode:         "ABCD-1234",
+		VerificationURI:  "https://login.microsoftonline.com/common/oauth2/deviceauth",
+		ExpiresInSeconds: 900,
+		IntervalSeconds:  5,
+	}
+	b, err := json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var out types.ChallengeResponse
+	if err := json.Unmarshal(b, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if out != in {
+		t.Fatalf("roundtrip mismatch: %+v vs %+v", out, in)
+	}
+}
+
+func TestCompleteChallengeRequestJSONRoundtrip(t *testing.T) {
+	in := types.CompleteChallengeRequest{ChallengeID: "01HXY9F3MM"}
+	b, _ := json.Marshal(in)
+	var out types.CompleteChallengeRequest
+	if err := json.Unmarshal(b, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if out != in {
+		t.Fatalf("roundtrip mismatch: %+v vs %+v", out, in)
+	}
+}
