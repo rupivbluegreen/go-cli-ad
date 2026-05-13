@@ -25,4 +25,10 @@ var (
 	ErrNotSupported = errors.New("idp: capability not supported")
 	// ErrNotImplemented marks stub providers reserved for future phases.
 	ErrNotImplemented = errors.New("idp: not implemented")
+	// ErrChallengePending indicates the user has not completed the device-code
+	// prompt yet; the caller (HTTP handler) should return HTTP 202 and the CLI
+	// should keep polling.
+	ErrChallengePending = errors.New("idp: challenge still pending")
+	// ErrChallengeExpired indicates the device code lifetime has elapsed.
+	ErrChallengeExpired = errors.New("idp: challenge expired")
 )
