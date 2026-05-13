@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/term"
 )
 
 // Globals captures persistent flags / viper values used by commands.
@@ -35,19 +36,41 @@ type Globals struct {
 	ConfigPath   string
 }
 
+// tuiRunner is wired by package main when the TUI subpackage is available.
+// Keeping it as a package-level hook avoids an import cycle between
+// internal/cli and internal/cli/tui (which depends on this package).
+var tuiRunner func(g *Globals) error
+
+// SetTUIRunner registers the function that launches the Bubble Tea TUI.
+// Called once from package main during program startup.
+func SetTUIRunner(fn func(*Globals) error) { tuiRunner = fn }
+
 // NewRootCmd builds the cobra root command tree.
 func NewRootCmd(version, commit string) *cobra.Command {
 	g := &Globals{}
 	root := &cobra.Command{
 		Use:           "ftsgw-cli",
 		Short:         "ftsgw broker client",
+		Long:          "ftsgw-cli is the companion client for the ftsgw broker.\n\nRun with no arguments on a TTY to launch the Bubble Tea TUI.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Name() == "version" {
 				return nil
 			}
+			// The root command's own RunE may launch the TUI on a TTY; tolerate
+			// a missing broker URL here and let the TUI surface it instead.
+			if cmd.Name() == "ftsgw-cli" {
+				_ = loadCLIConfig(g)
+				return nil
+			}
 			return loadCLIConfig(g)
+		},
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if tuiRunner != nil && term.IsTerminal(int(os.Stdout.Fd())) {
+				return tuiRunner(g)
+			}
+			return cmd.Help()
 		},
 	}
 	root.PersistentFlags().StringVar(&g.ConfigPath, "config", "", "CLI config path (default ~/.config/ftsgw/cli.yaml)")

@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/rupivbluegreen/go-cli-ad/ftsgw/internal/cli"
+	"github.com/rupivbluegreen/go-cli-ad/ftsgw/internal/cli/tui"
 )
 
 var (
@@ -28,6 +29,7 @@ var (
 )
 
 func main() {
+	cli.SetTUIRunner(tui.Run)
 	root := cli.NewRootCmd(version, commit)
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "ftsgw-cli:", err)
